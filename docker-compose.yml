@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  app:
+    image: openjdk:17-jdk-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app  
+      - maven_cache:/root/.m2  
+    working_dir: /app
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/mydatabase
+      DATABASE_USER: myuser
+      DATABASE_PASSWORD: mypassword
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    user: "1000:1000" 
+    command: sh -c "mvn clean package -DskipTests && java -jar target/cashFlowBack-1.0-SNAPSHOT.jar && flyway migrate && rm -rf /root/.m2/repository/*"
+
+  db:
+    image: postgres:alpine
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+  maven_cache:
